@@ -11,7 +11,7 @@ Based on:
 ## Screenshots
 
 ## Desktop
-<img  width="180"  height="320"  src="https://raw.githubusercontent.com/alexmod20/flutter_firebase_webrtc/master/screenshots/desktop.png"/>
+<img src="https://raw.githubusercontent.com/alexmod20/flutter_firebase_webrtc/master/screenshots/desktop.png"/>
 
 ## Mobile
 <img  width="180"  height="320"  src="https://raw.githubusercontent.com/alexmod20/flutter_firebase_webrtc/master/screenshots/mobile.png"/>
