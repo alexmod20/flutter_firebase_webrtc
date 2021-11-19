@@ -3,7 +3,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class Signaling {
   FirebaseFirestore db = FirebaseFirestore.instance;
-  String _roomId;
+  String? _roomId;
   Map<String, dynamic> _configurationServer = {
     'iceServers': [
       {
@@ -24,14 +24,14 @@ class Signaling {
     "optional": [],
   };
 
-  RTCPeerConnection _rtcPeerConnection;
-  MediaStream _localStream;
-  Function(MediaStream stream) onLocalStream;
-  Function(MediaStream stream) onAddRemoteStream;
-  Function() onRemoveRemoteStream;
-  Function() onDisconnect;
+  late RTCPeerConnection _rtcPeerConnection;
+  late MediaStream _localStream;
+  late Function(MediaStream stream) onLocalStream;
+  late Function(MediaStream stream) onAddRemoteStream;
+  late Function() onRemoveRemoteStream;
+  late Function() onDisconnect;
 
-  Future<String> createRoom() async {
+  Future<String?> createRoom() async {
     final roomRef = db.collection('rooms').doc();
     _roomId = roomRef.id;
 
@@ -41,7 +41,7 @@ class Signaling {
         'facingMode': 'user',
       },
     });
-    onLocalStream?.call(_localStream);
+    onLocalStream.call(_localStream);
 
     _rtcPeerConnection = await createPeerConnection(_configurationServer);
 
@@ -78,7 +78,7 @@ class Signaling {
     // Code for creating a room above
 
     _rtcPeerConnection.onTrack = (RTCTrackEvent event) {
-      onAddRemoteStream?.call(event.streams[0]);
+      onAddRemoteStream.call(event.streams[0]);
       print('Got remote track: ${event.streams[0]}');
     };
 
@@ -87,7 +87,10 @@ class Signaling {
       final data = snapshot.data();
       if (data != null && data.containsKey('answer')) {
         print('Got remote description: ${data["answer"]}');
-        final rtcSessionDescription = RTCSessionDescription(data['answer']['sdp'], data['answer']['type']);
+        final rtcSessionDescription = RTCSessionDescription(
+          data['answer']['sdp'],
+          data['answer']['type'],
+        );
         await _rtcPeerConnection.setRemoteDescription(rtcSessionDescription);
       }
     });
@@ -99,7 +102,11 @@ class Signaling {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data();
           print('Got new remote ICE candidate: $data');
-          await _rtcPeerConnection.addCandidate(RTCIceCandidate(data['candidate'], data['sdpMid'], data['sdpMlineIndex']));
+          await _rtcPeerConnection.addCandidate(RTCIceCandidate(
+            data?['candidate'],
+            data?['sdpMid'],
+            data?['sdpMlineIndex'],
+          ));
         }
       });
     });
@@ -124,7 +131,7 @@ class Signaling {
           'facingMode': 'user',
         },
       });
-      onLocalStream?.call(_localStream);
+      onLocalStream.call(_localStream);
 
       _rtcPeerConnection = await createPeerConnection(_configurationServer);
       registerPeerConnectionListeners();
@@ -146,14 +153,17 @@ class Signaling {
 
       _rtcPeerConnection.onTrack = (RTCTrackEvent event) {
         print('Got remote track: ${event.streams[0]}');
-        if (event.track.kind == 'video') onAddRemoteStream?.call(event.streams[0]);
+        if (event.track.kind == 'video')
+          onAddRemoteStream.call(event.streams[0]);
       };
 
       // Code for creating SDP answer below
-      final offer = roomSnapshot.data()['offer'];
+      final offer = roomSnapshot.data()?['offer'];
       print('Got offer: $offer');
-      await _rtcPeerConnection.setRemoteDescription(RTCSessionDescription(offer['sdp'], offer['type']));
-      final RTCSessionDescription answer = await _rtcPeerConnection.createAnswer(offerSdpConstraints);
+      await _rtcPeerConnection.setRemoteDescription(
+          RTCSessionDescription(offer['sdp'], offer['type']));
+      final RTCSessionDescription answer =
+          await _rtcPeerConnection.createAnswer(offerSdpConstraints);
       print('Created answer: ${answer.toMap()}');
       await _rtcPeerConnection.setLocalDescription(answer);
 
@@ -169,7 +179,11 @@ class Signaling {
           if (change.type == DocumentChangeType.added) {
             final data = change.doc.data();
             print('Got new remote ICE candidate: $data');
-            await _rtcPeerConnection.addCandidate(RTCIceCandidate(data['candidate'], data['sdpMid'], data['sdpMlineIndex']));
+            await _rtcPeerConnection.addCandidate(RTCIceCandidate(
+              data?['candidate'],
+              data?['sdpMid'],
+              data?['sdpMlineIndex'],
+            ));
           }
         });
       });
@@ -198,11 +212,13 @@ class Signaling {
     // Delete room on hangup
     if (_roomId != null) {
       final roomRef = db.collection('rooms').doc(_roomId);
-      final calleeCandidates = await roomRef.collection('calleeCandidates').get();
+      final calleeCandidates =
+          await roomRef.collection('calleeCandidates').get();
       calleeCandidates.docs.forEach((candidate) async {
         await candidate.reference.delete();
       });
-      final callerCandidates = await roomRef.collection('callerCandidates').get();
+      final callerCandidates =
+          await roomRef.collection('callerCandidates').get();
       callerCandidates.docs.forEach((candidate) async {
         await candidate.reference.delete();
       });

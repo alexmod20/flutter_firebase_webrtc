@@ -9,12 +9,12 @@ class VideoCallPage extends StatefulWidget {
 }
 
 class _VideoCallPageState extends State<VideoCallPage> {
-  Signaling signaling;
+  Signaling? signaling;
   RTCVideoRenderer localRenderer = RTCVideoRenderer();
   RTCVideoRenderer remoteRenderer = RTCVideoRenderer();
   bool inCalling = false;
-  String roomId;
-  TextEditingController _joinRoomTextEditingController;
+  String? roomId;
+  late TextEditingController _joinRoomTextEditingController;
 
   @override
   void initState() {
@@ -29,19 +29,19 @@ class _VideoCallPageState extends State<VideoCallPage> {
     if (signaling == null) {
       signaling = Signaling();
 
-      signaling.onLocalStream = ((stream) {
+      signaling?.onLocalStream = ((stream) {
         localRenderer.srcObject = stream;
       });
 
-      signaling.onAddRemoteStream = ((stream) {
+      signaling?.onAddRemoteStream = ((stream) {
         remoteRenderer.srcObject = stream;
       });
 
-      signaling.onRemoveRemoteStream = (() {
+      signaling?.onRemoveRemoteStream = (() {
         remoteRenderer.srcObject = null;
       });
 
-      signaling.onDisconnect = (() {
+      signaling?.onDisconnect = (() {
         setState(() {
           inCalling = false;
           roomId = null;
@@ -72,7 +72,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 children: <Widget>[
                   FloatingActionButton(
                     onPressed: () async {
-                      await signaling.hungUp();
+                      await signaling?.hungUp();
                       setState(() {
                         roomId = null;
                         inCalling = false;
@@ -84,7 +84,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   ),
                   FloatingActionButton(
                     child: const Icon(Icons.mic_off),
-                    onPressed: signaling.muteMic,
+                    onPressed: signaling?.muteMic,
                     tooltip: 'Mute Mic',
                   )
                 ],
@@ -120,25 +120,30 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 children: [
                   Container(
                     height: 36.0,
-                    child: RaisedButton.icon(
-                      color: Theme.of(context).primaryColor,
+                    child: ElevatedButton.icon(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color?>(
+                            Theme.of(context).primaryColor),
+                        foregroundColor:
+                            MaterialStateProperty.all<Color?>(Colors.white),
+                      ),
                       label: Text('CREATE ROOM'),
-                      textColor: Colors.white,
                       icon: Icon(Icons.group_add),
                       onPressed: () async {
-                        final _roomId = await signaling.createRoom();
+                        final _roomId = await signaling?.createRoom();
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
                             title: Text('Current room is'),
                             content: Row(
                               children: [
-                                Text(_roomId),
+                                Text(_roomId!),
                                 SizedBox(width: 8.0),
                                 IconButton(
                                   icon: Icon(Icons.copy),
                                   onPressed: () {
-                                    Clipboard.setData(ClipboardData(text: _roomId));
+                                    Clipboard.setData(
+                                        ClipboardData(text: _roomId));
                                     Navigator.of(context).pop();
                                   },
                                 )
@@ -158,10 +163,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   ),
                   Container(
                     height: 36.0,
-                    child: RaisedButton.icon(
-                      color: Theme.of(context).primaryColor,
+                    child: ElevatedButton.icon(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color?>(
+                            Theme.of(context).primaryColor),
+                        foregroundColor:
+                            MaterialStateProperty.all<Color?>(Colors.white),
+                      ),
                       label: Text('JOIN ROOM'),
-                      textColor: Colors.white,
                       icon: Icon(Icons.people),
                       onPressed: () async {
                         await showDialog(
@@ -199,7 +208,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
                           ),
                         );
                         if (_joinRoomTextEditingController.text.isNotEmpty) {
-                          await signaling.joinRoomById(_joinRoomTextEditingController.text);
+                          await signaling?.joinRoomById(
+                              _joinRoomTextEditingController.text);
                           setState(() {
                             inCalling = true;
                             roomId = _joinRoomTextEditingController.text;
